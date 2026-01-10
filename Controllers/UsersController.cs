@@ -2,6 +2,7 @@
 using BloodLink.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace BloodLink.Controllers
 {
@@ -16,12 +17,44 @@ namespace BloodLink.Controllers
             _context = context;
         }
 
+        // ===================== DTOs (داخل نفس الملف عادي) =====================
+        public class RegisterDto
+        {
+            [Required] public string FullName { get; set; }
+            [Required] public string Email { get; set; }
+            [Required] public string PasswordHash { get; set; }
+            [Required] public string City { get; set; }
+            [Required] public string Phone { get; set; }
+            [Required] public string BloodType { get; set; }
+        }
+
+        public class ForgotPasswordDto
+        {
+            [Required] public string Email { get; set; }
+        }
+        // =====================================================================
+
         // ---------------- Register ----------------
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] User user)
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            if (await _context.Users.AnyAsync(x => x.Email == user.Email))
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
                 return BadRequest(new { message = "Email already exists" });
+
+            var user = new User
+            {
+                FullName = dto.FullName,
+                Email = dto.Email,
+                PasswordHash = dto.PasswordHash,
+                City = dto.City,
+                Phone = dto.Phone,
+                BloodType = dto.BloodType,
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -30,29 +63,46 @@ namespace BloodLink.Controllers
         }
 
         // ---------------- Login ----------------
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] User login)
+[HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] LoginDto login)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+
+    var user = await _context.Users
+        .FirstOrDefaultAsync(x =>
+            x.Email == login.Email &&
+            x.PasswordHash == login.PasswordHash
+        );
+
+    if (user == null)
+        return Unauthorized(new { message = "Invalid email or password" });
+
+    return Ok(new
+    {
+        message = "Login successful",
+        user = new
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Email == login.Email && x.PasswordHash == login.PasswordHash);
-
-            if (user == null)
-                return Unauthorized(new { message = "Invalid email or password" });
-
-            return Ok(new { message = "Login successful", user });
+            user.UserID,
+            user.FullName,
+            user.Email,
+            user.Phone,
+            user.BloodType
         }
+    });
+}
 
         // ---------------- Forgot Password ----------------
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] dynamic data)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
-            string email = data.email;
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
             if (user == null)
                 return NotFound(new { message = "Email not found" });
 
-            // Generate OTP
             var otp = new OTP
             {
                 UserID = user.UserID,
@@ -88,6 +138,7 @@ namespace BloodLink.Controllers
             user.FullName = updated.FullName;
             user.Phone = updated.Phone;
             user.BloodType = updated.BloodType;
+            user.City = updated.City;
 
             await _context.SaveChangesAsync();
 
