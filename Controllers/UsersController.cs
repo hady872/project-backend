@@ -17,7 +17,7 @@ namespace BloodLink.Controllers
             _context = context;
         }
 
-        // ===================== DTOs (داخل نفس الملف عادي) =====================
+        // ===================== DTOs =====================
         public class RegisterDto
         {
             [Required] public string FullName { get; set; }
@@ -26,13 +26,23 @@ namespace BloodLink.Controllers
             [Required] public string City { get; set; }
             [Required] public string Phone { get; set; }
             [Required] public string BloodType { get; set; }
+
+            // ✅ الجديد
+            [Required] public string AccountType { get; set; } // "user" or "hospital"
         }
 
         public class ForgotPasswordDto
         {
             [Required] public string Email { get; set; }
         }
-        // =====================================================================
+
+        // ✅ DTO جديد لتعديل نوع الحساب
+        public class UpdateAccountTypeDto
+        {
+            [Required] public string Email { get; set; }
+            [Required] public string AccountType { get; set; } // "user" or "hospital"
+        }
+        // =================================================
 
         // ---------------- Register ----------------
         [HttpPost("register")]
@@ -41,17 +51,24 @@ namespace BloodLink.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
+            var email = dto.Email.Trim().ToLower();
+            var accountType = dto.AccountType.Trim().ToLower();
+
+            if (accountType != "user" && accountType != "hospital")
+                return BadRequest(new { message = "AccountType must be 'user' or 'hospital'." });
+
+            if (await _context.Users.AnyAsync(x => x.Email.ToLower() == email))
                 return BadRequest(new { message = "Email already exists" });
 
             var user = new User
             {
-                FullName = dto.FullName,
-                Email = dto.Email,
+                FullName = dto.FullName.Trim(),
+                Email = email,
                 PasswordHash = dto.PasswordHash,
-                City = dto.City,
-                Phone = dto.Phone,
-                BloodType = dto.BloodType,
+                City = dto.City.Trim(),
+                Phone = dto.Phone.Trim(),
+                BloodType = dto.BloodType.Trim(),
+                AccountType = accountType, // ✅ هنا
                 IsActive = true,
                 CreatedAt = DateTime.Now
             };
@@ -63,34 +80,72 @@ namespace BloodLink.Controllers
         }
 
         // ---------------- Login ----------------
-[HttpPost("login")]
-public async Task<IActionResult> Login([FromBody] LoginDto login)
-{
-    if (!ModelState.IsValid)
-        return BadRequest(ModelState);
-
-    var user = await _context.Users
-        .FirstOrDefaultAsync(x =>
-            x.Email == login.Email &&
-            x.PasswordHash == login.PasswordHash
-        );
-
-    if (user == null)
-        return Unauthorized(new { message = "Invalid email or password" });
-
-    return Ok(new
-    {
-        message = "Login successful",
-        user = new
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto login)
         {
-            user.UserID,
-            user.FullName,
-            user.Email,
-            user.Phone,
-            user.BloodType
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var email = login.Email.Trim().ToLower();
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x =>
+                    x.Email.ToLower() == email &&
+                    x.PasswordHash == login.PasswordHash
+                );
+
+            if (user == null)
+                return Unauthorized(new { message = "Invalid email or password" });
+
+            // ✅ مهم: رجّع accountType للفرونت عشان يقرر يروح فين
+            return Ok(new
+            {
+                message = "Login successful",
+                user = new
+                {
+                    user.UserID,
+                    user.FullName,
+                    user.Email,
+                    user.Phone,
+                    user.BloodType,
+                    user.AccountType
+                }
+            });
         }
-    });
-}
+
+        // ✅ ---------------- Update Account Type ----------------
+        // الهدف: نصلّح اليوزرات القديمة اللي accountType عندها فاضي
+        [HttpPut("account-type")]
+        public async Task<IActionResult> UpdateAccountType([FromBody] UpdateAccountTypeDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var email = dto.Email.Trim().ToLower();
+            var accountType = dto.AccountType.Trim().ToLower();
+
+            if (accountType != "user" && accountType != "hospital")
+                return BadRequest(new { message = "AccountType must be 'user' or 'hospital'." });
+
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower() == email);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            user.AccountType = accountType;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "AccountType updated successfully",
+                user = new
+                {
+                    user.UserID,
+                    user.FullName,
+                    user.Email,
+                    user.AccountType
+                }
+            });
+        }
 
         // ---------------- Forgot Password ----------------
         [HttpPost("forgot-password")]
@@ -99,7 +154,9 @@ public async Task<IActionResult> Login([FromBody] LoginDto login)
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
+            var email = dto.Email.Trim().ToLower();
+
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email.ToLower() == email);
             if (user == null)
                 return NotFound(new { message = "Email not found" });
 
@@ -146,6 +203,3 @@ public async Task<IActionResult> Login([FromBody] LoginDto login)
         }
     }
 }
-
-
-// U07: Sync backend with frontend update

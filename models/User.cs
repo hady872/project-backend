@@ -6,6 +6,7 @@ namespace BloodLink.Models
 {
     public class User
     {
+        public string AccountType { get; set; }  // "user" or "hospital"
         public int UserID { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
