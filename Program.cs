@@ -30,13 +30,16 @@ public partial class Program
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
+        // Swagger (خليه دايمًا شغال عندك)
         app.UseSwagger();
         app.UseSwaggerUI();
 
         app.MapOpenApi();
 
-        app.UseHttpsRedirection();
+        // ✅ مهم: هنشيل الـ HTTPS Redirect عشان الفرونت بيكلم http://localhost:5240
+        // app.UseHttpsRedirection();
+
+        app.UseRouting();
 
         app.UseCors("AllowReact");
 
