@@ -1,4 +1,5 @@
-﻿using BloodLink.Data;
+﻿// Controllers/otp.cs
+using BloodLink.Data;
 using BloodLink.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

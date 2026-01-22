@@ -1,4 +1,5 @@
-﻿using System;
+﻿// models/Donation.cs
+using System;
 
 namespace BloodLink.Models
 {

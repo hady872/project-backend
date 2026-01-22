@@ -1,4 +1,5 @@
-﻿using System;
+﻿// models/otp.cs
+using System;
 
 namespace BloodLink.Models
 {

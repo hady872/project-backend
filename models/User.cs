@@ -1,4 +1,5 @@
-﻿using System;
+﻿// models/User.cs
+using System;
 using System.Collections.Generic;
 using static System.Net.WebRequestMethods;
 

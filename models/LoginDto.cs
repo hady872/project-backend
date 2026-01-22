@@ -1,3 +1,4 @@
+// models/LoginDto.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace BloodLink.Models
