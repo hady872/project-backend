@@ -1,12 +1,14 @@
 // Program.cs
 using BloodLink.Data;
 using Microsoft.EntityFrameworkCore;
+// تأكد من وجود هذه المكتبات إذا لم تكن موجودة تلقائياً
+using Microsoft.Extensions.DependencyInjection; 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database Connection
+// 1. Database Connection (Modified to SQLite)
 builder.Services.AddDbContext<BloodLinkContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 // 2. Optimized CORS Policy
@@ -18,7 +20,7 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
-    }); // هنا تم تصحيح القفل والفاصلة المنقوطة
+    }); 
 });
 
 builder.Services.AddControllers();
