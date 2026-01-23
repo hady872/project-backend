@@ -4,6 +4,7 @@ using BloodLink.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebApplication4.Migrations
 {
     [DbContext(typeof(BloodLinkContext))]
-    partial class BloodLinkContextModelSnapshot : ModelSnapshot
+    [Migration("20260122213123_AddHospitalRequestToDonation")]
+    partial class AddHospitalRequestToDonation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -66,42 +69,18 @@ namespace WebApplication4.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DonationID"));
 
-                    b.Property<int?>("BloodBankBankID")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("BloodBankBankID1")
+                    b.Property<int>("BloodBankBankID")
                         .HasColumnType("int");
 
                     b.Property<string>("BloodType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CenterName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DonatedBefore")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("DonationDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("HospitalRequestID")
                         .HasColumnType("int");
-
-                    b.Property<string>("Medications")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RecentInfection")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RecentSurgery")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -110,14 +89,9 @@ namespace WebApplication4.Migrations
                     b.Property<int>("UserID")
                         .HasColumnType("int");
 
-                    b.Property<double?>("Weight")
-                        .HasColumnType("float");
-
                     b.HasKey("DonationID");
 
                     b.HasIndex("BloodBankBankID");
-
-                    b.HasIndex("BloodBankBankID1");
 
                     b.HasIndex("HospitalRequestID");
 
@@ -256,12 +230,10 @@ namespace WebApplication4.Migrations
             modelBuilder.Entity("BloodLink.Models.Donation", b =>
                 {
                     b.HasOne("BloodLink.Models.BloodBank", "BloodBank")
-                        .WithMany()
-                        .HasForeignKey("BloodBankBankID");
-
-                    b.HasOne("BloodLink.Models.BloodBank", null)
                         .WithMany("Donations")
-                        .HasForeignKey("BloodBankBankID1");
+                        .HasForeignKey("BloodBankBankID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("BloodLink.Models.HospitalRequest", "HospitalRequest")
                         .WithMany()

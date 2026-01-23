@@ -1,4 +1,3 @@
-// Controllers/HospitalRequestsController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BloodLink.Data;
@@ -17,22 +16,25 @@ namespace BloodLink.Controllers
             _context = context;
         }
 
-        // ✅ GET: api/HospitalRequests/GetAll
+        // GET: api/HospitalRequests/GetAll
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _context.Set<HospitalRequest>()
+            // استخدام AsNoTracking يضمن الحصول على أحدث بيانات من الداتابيز مباشرة
+            var list = await _context.HospitalRequests
+                .AsNoTracking()
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
             return Ok(list);
         }
 
-        // ✅ GET: api/HospitalRequests/GetByHospital/5
+        // GET: api/HospitalRequests/GetByHospital/5
         [HttpGet("GetByHospital/{hospitalUserId:int}")]
         public async Task<IActionResult> GetByHospital(int hospitalUserId)
         {
-            var list = await _context.Set<HospitalRequest>()
+            var list = await _context.HospitalRequests
+                .AsNoTracking()
                 .Where(r => r.HospitalUserID == hospitalUserId)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
@@ -40,11 +42,12 @@ namespace BloodLink.Controllers
             return Ok(list);
         }
 
-        // ✅ GET: api/HospitalRequests/10
+        // GET: api/HospitalRequests/10
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var req = await _context.Set<HospitalRequest>()
+            var req = await _context.HospitalRequests
+                .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.RequestID == id);
 
             if (req == null)
@@ -53,99 +56,50 @@ namespace BloodLink.Controllers
             return Ok(req);
         }
 
-        // ✅ POST: api/HospitalRequests/Create
+        // POST: api/HospitalRequests/Create
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] HospitalRequest model)
         {
             if (model == null)
                 return BadRequest(new { message = "Invalid body" });
 
-            if (model.HospitalUserID <= 0)
-                return BadRequest(new { message = "HospitalUserID is required" });
+            // التحقق من صحة البيانات (Validation)
+            if (model.HospitalUserID <= 0 || string.IsNullOrWhiteSpace(model.HospitalName) || 
+                string.IsNullOrWhiteSpace(model.PatientName) || model.Amount <= 0)
+            {
+                return BadRequest(new { message = "Please fill all required fields correctly." });
+            }
 
-            if (string.IsNullOrWhiteSpace(model.HospitalName))
-                return BadRequest(new { message = "HospitalName is required" });
+            // استخدام UtcNow لتوحيد التوقيت ومنع مشاكل الظهور
+            model.CreatedAt = DateTime.UtcNow;
 
-            if (string.IsNullOrWhiteSpace(model.PatientName))
-                return BadRequest(new { message = "PatientName is required" });
-
-            if (model.Amount <= 0)
-                return BadRequest(new { message = "Amount must be > 0" });
-
-            if (string.IsNullOrWhiteSpace(model.BloodType))
-                return BadRequest(new { message = "BloodType is required" });
-
-            if (string.IsNullOrWhiteSpace(model.Urgency))
-                return BadRequest(new { message = "Urgency is required" });
-
-            if (string.IsNullOrWhiteSpace(model.Contact))
-                return BadRequest(new { message = "Contact is required" });
-
-            if (string.IsNullOrWhiteSpace(model.Location))
-                return BadRequest(new { message = "Location is required" });
-
-            model.CreatedAt = DateTime.Now;
-
-            _context.Set<HospitalRequest>().Add(model);
+            _context.HospitalRequests.Add(model);
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
-                message = "Request created",
+                message = "Request created successfully",
                 data = model
             });
         }
 
-        // ✅ PUT: api/HospitalRequests/Update/10
+        // PUT: api/HospitalRequests/Update/10
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] HospitalRequest model)
         {
-            if (model == null)
-                return BadRequest(new { message = "Invalid body" });
-
-            var existing = await _context.Set<HospitalRequest>()
+            var existing = await _context.HospitalRequests
                 .FirstOrDefaultAsync(r => r.RequestID == id);
 
             if (existing == null)
                 return NotFound(new { message = "Request not found" });
 
-            // ✅ تحديث الحقول المسموح بتعديلها
-            if (!string.IsNullOrWhiteSpace(model.PatientName))
-                existing.PatientName = model.PatientName.Trim();
-
-            if (model.Amount > 0)
-                existing.Amount = model.Amount;
-
-            if (!string.IsNullOrWhiteSpace(model.BloodType))
-                existing.BloodType = model.BloodType.Trim();
-
-            if (!string.IsNullOrWhiteSpace(model.Urgency))
-                existing.Urgency = model.Urgency.Trim().ToLower();
-
-            if (!string.IsNullOrWhiteSpace(model.Contact))
-                existing.Contact = model.Contact.Trim();
-
-            if (!string.IsNullOrWhiteSpace(model.Location))
-                existing.Location = model.Location.Trim();
-
-            // ✅ Validation بعد التعديل
-            if (existing.Amount <= 0)
-                return BadRequest(new { message = "Amount must be > 0" });
-
-            if (string.IsNullOrWhiteSpace(existing.PatientName))
-                return BadRequest(new { message = "PatientName is required" });
-
-            if (string.IsNullOrWhiteSpace(existing.BloodType))
-                return BadRequest(new { message = "BloodType is required" });
-
-            if (string.IsNullOrWhiteSpace(existing.Urgency))
-                return BadRequest(new { message = "Urgency is required" });
-
-            if (string.IsNullOrWhiteSpace(existing.Contact))
-                return BadRequest(new { message = "Contact is required" });
-
-            if (string.IsNullOrWhiteSpace(existing.Location))
-                return BadRequest(new { message = "Location is required" });
+            // تحديث الحقول
+            existing.PatientName = model.PatientName ?? existing.PatientName;
+            existing.Amount = model.Amount > 0 ? model.Amount : existing.Amount;
+            existing.BloodType = model.BloodType ?? existing.BloodType;
+            existing.Urgency = model.Urgency ?? existing.Urgency;
+            existing.Contact = model.Contact ?? existing.Contact;
+            existing.Location = model.Location ?? existing.Location;
 
             await _context.SaveChangesAsync();
 
@@ -156,20 +110,33 @@ namespace BloodLink.Controllers
             });
         }
 
-        // ✅ DELETE: api/HospitalRequests/Delete/10
+        // DELETE: api/HospitalRequests/Delete/10
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var req = await _context.Set<HospitalRequest>()
+            var req = await _context.HospitalRequests
                 .FirstOrDefaultAsync(r => r.RequestID == id);
 
             if (req == null)
                 return NotFound(new { message = "Request not found" });
 
-            _context.Set<HospitalRequest>().Remove(req);
+            _context.HospitalRequests.Remove(req);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Request deleted" });
+        }
+
+        // GET: api/HospitalRequests/GetAllForUser
+        [HttpGet("GetAllForUser")]
+        public async Task<IActionResult> GetAllForUser()
+        {
+            // تم التأكد من جلب كل البيانات مرتبة من الأحدث للأقدم
+            var list = await _context.HospitalRequests
+                .AsNoTracking()
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            return Ok(list);
         }
     }
 }

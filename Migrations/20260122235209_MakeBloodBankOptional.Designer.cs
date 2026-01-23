@@ -4,6 +4,7 @@ using BloodLink.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebApplication4.Migrations
 {
     [DbContext(typeof(BloodLinkContext))]
-    partial class BloodLinkContextModelSnapshot : ModelSnapshot
+    [Migration("20260122235209_MakeBloodBankOptional")]
+    partial class MakeBloodBankOptional
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,32 +79,11 @@ namespace WebApplication4.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CenterName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DonatedBefore")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("DonationDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("HospitalRequestID")
                         .HasColumnType("int");
-
-                    b.Property<string>("Medications")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RecentInfection")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RecentSurgery")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -109,9 +91,6 @@ namespace WebApplication4.Migrations
 
                     b.Property<int>("UserID")
                         .HasColumnType("int");
-
-                    b.Property<double?>("Weight")
-                        .HasColumnType("float");
 
                     b.HasKey("DonationID");
 

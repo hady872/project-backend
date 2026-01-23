@@ -1,5 +1,4 @@
-﻿// Controllers/DonationsController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BloodLink.Data;
 using BloodLink.Models;
@@ -17,63 +16,61 @@ namespace BloodLink.Controllers
             _context = context;
         }
 
+        // ✅ تم تعديل هذه الميثود لحل مشكلة الـ Error 500
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
-            var donations = await _context.Donations
-                .Include(d => d.User)
-                .Include(d => d.BloodBank)
-                .ToListAsync();
+            try 
+            {
+                // سحب التبرعات الأساسية فقط لضمان استقرار الطلب
+                var donations = await _context.Donations
+                    .AsNoTracking()
+                    .OrderByDescending(d => d.DonationDate)
+                    .ToListAsync();
 
-            return Ok(donations);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var donation = await _context.Donations
-                .Include(d => d.User)
-                .Include(d => d.BloodBank)
-                .FirstOrDefaultAsync(d => d.DonationID == id);
-
-            if (donation == null)
-                return NotFound(new { message = "Donation not found" });
-
-            return Ok(donation);
+                return Ok(donations);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error fetching donations", details = ex.Message });
+            }
         }
 
         [HttpPost("CreateDonation")]
-        public async Task<IActionResult> Create(Donation donation)
+        public async Task<IActionResult> Create([FromBody] Donation donation)
         {
-            _context.Donations.Add(donation);
-            await _context.SaveChangesAsync();
+            ModelState.Clear();
 
-            return Ok(new { message = "Donation created", data = donation });
-        }
+            try 
+            {
+                donation.User = null;
+                donation.HospitalRequest = null;
+                donation.BloodBank = null;
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Donation donation)
-        {
-            if (id != donation.DonationID)
-                return BadRequest(new { message = "ID mismatch" });
+                if (string.IsNullOrEmpty(donation.Status))
+                    donation.Status = "Pending";
 
-            _context.Entry(donation).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+                _context.Donations.Add(donation);
+                await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Donation updated" });
+                return Ok(new { message = "Donation created successfully", id = donation.DonationID });
+            }
+            catch (Exception ex)
+            {
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return BadRequest(new { message = $"Database Error: {innerMessage}" });
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var donation = await _context.Donations.FindAsync(id);
-            if (donation == null)
-                return NotFound(new { message = "Donation not found" });
+            if (donation == null) return NotFound();
 
             _context.Donations.Remove(donation);
             await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Donation deleted" });
+            return Ok(new { message = "Deleted Successfully" });
         }
     }
 }

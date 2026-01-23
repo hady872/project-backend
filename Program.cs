@@ -2,52 +2,46 @@
 using BloodLink.Data;
 using Microsoft.EntityFrameworkCore;
 
-public partial class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. Database Connection
+builder.Services.AddDbContext<BloodLinkContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
+
+// 2. Optimized CORS Policy
+builder.Services.AddCors(options =>
 {
-    private static void Main(string[] args)
+    options.AddPolicy("AllowAll", policy =>
     {
-        var builder = WebApplication.CreateBuilder(args);
+        policy.SetIsOriginAllowed(origin => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    }); // هنا تم تصحيح القفل والفاصلة المنقوطة
+});
 
-        builder.Services.AddDbContext<BloodLinkContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-        );
+builder.Services.AddControllers();
 
-        builder.Services.AddCors(options =>
-        {
-            options.AddPolicy("AllowReact", policy =>
-                policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-            );
-        });
+// 3. Swagger Configuration
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-        // Add services to the container.
-        builder.Services.AddControllers();
+var app = builder.Build();
 
-        // Swagger / OpenAPI
-        builder.Services.AddOpenApi();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+// Always show Swagger for development ease
+app.UseSwagger();
+app.UseSwaggerUI(c => {
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "BloodLink API V1");
+});
 
-        var app = builder.Build();
+// تفعيل الـ CORS والـ Routing والـ Authorization بالترتيب الصحيح
+app.UseRouting();
 
-        // Swagger (خليه دايمًا شغال عندك)
-        app.UseSwagger();
-        app.UseSwaggerUI();
+app.UseCors("AllowAll");
 
-        app.MapOpenApi();
+app.UseAuthorization();
 
-        // ✅ مهم: هنشيل الـ HTTPS Redirect عشان الفرونت بيكلم http://localhost:5240
-        // app.UseHttpsRedirection();
+app.MapControllers();
 
-        app.UseRouting();
-
-        app.UseCors("AllowReact");
-
-        app.UseAuthorization();
-
-        app.MapControllers();
-
-        app.Run();
-    }
-}
+app.Run();
