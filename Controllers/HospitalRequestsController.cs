@@ -20,7 +20,6 @@ namespace BloodLink.Controllers
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
-            // استخدام AsNoTracking يضمن الحصول على أحدث بيانات من الداتابيز مباشرة
             var list = await _context.HospitalRequests
                 .AsNoTracking()
                 .OrderByDescending(r => r.CreatedAt)
@@ -33,8 +32,9 @@ namespace BloodLink.Controllers
         [HttpGet("GetByHospital/{hospitalUserId:int}")]
         public async Task<IActionResult> GetByHospital(int hospitalUserId)
         {
+            // تم إضافة Include لسحب المتبرعين مع الطلب
             var list = await _context.HospitalRequests
-                .AsNoTracking()
+                .Include(r => r.Donations) 
                 .Where(r => r.HospitalUserID == hospitalUserId)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
@@ -47,7 +47,7 @@ namespace BloodLink.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var req = await _context.HospitalRequests
-                .AsNoTracking()
+                .Include(r => r.Donations)
                 .FirstOrDefaultAsync(r => r.RequestID == id);
 
             if (req == null)
@@ -63,14 +63,12 @@ namespace BloodLink.Controllers
             if (model == null)
                 return BadRequest(new { message = "Invalid body" });
 
-            // التحقق من صحة البيانات (Validation)
             if (model.HospitalUserID <= 0 || string.IsNullOrWhiteSpace(model.HospitalName) || 
                 string.IsNullOrWhiteSpace(model.PatientName) || model.Amount <= 0)
             {
                 return BadRequest(new { message = "Please fill all required fields correctly." });
             }
 
-            // استخدام UtcNow لتوحيد التوقيت ومنع مشاكل الظهور
             model.CreatedAt = DateTime.UtcNow;
 
             _context.HospitalRequests.Add(model);
@@ -93,7 +91,6 @@ namespace BloodLink.Controllers
             if (existing == null)
                 return NotFound(new { message = "Request not found" });
 
-            // تحديث الحقول
             existing.PatientName = model.PatientName ?? existing.PatientName;
             existing.Amount = model.Amount > 0 ? model.Amount : existing.Amount;
             existing.BloodType = model.BloodType ?? existing.BloodType;
@@ -130,7 +127,6 @@ namespace BloodLink.Controllers
         [HttpGet("GetAllForUser")]
         public async Task<IActionResult> GetAllForUser()
         {
-            // تم التأكد من جلب كل البيانات مرتبة من الأحدث للأقدم
             var list = await _context.HospitalRequests
                 .AsNoTracking()
                 .OrderByDescending(r => r.CreatedAt)

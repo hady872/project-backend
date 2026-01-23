@@ -3,6 +3,7 @@ using System;
 using BloodLink.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebApplication4.Migrations
 {
     [DbContext(typeof(BloodLinkContext))]
-    partial class BloodLinkContextModelSnapshot : ModelSnapshot
+    [Migration("20260123170955_AddDonationsToHospitalRequest")]
+    partial class AddDonationsToHospitalRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -82,6 +85,9 @@ namespace WebApplication4.Migrations
                     b.Property<int?>("HospitalRequestID")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("HospitalRequestRequestID")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Medications")
                         .HasColumnType("TEXT");
 
@@ -111,6 +117,8 @@ namespace WebApplication4.Migrations
                     b.HasIndex("BloodBankBankID1");
 
                     b.HasIndex("HospitalRequestID");
+
+                    b.HasIndex("HospitalRequestRequestID");
 
                     b.HasIndex("UserID");
 
@@ -249,9 +257,13 @@ namespace WebApplication4.Migrations
                         .HasForeignKey("BloodBankBankID1");
 
                     b.HasOne("BloodLink.Models.HospitalRequest", "HospitalRequest")
-                        .WithMany("Donations")
+                        .WithMany()
                         .HasForeignKey("HospitalRequestID")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BloodLink.Models.HospitalRequest", null)
+                        .WithMany("Donations")
+                        .HasForeignKey("HospitalRequestRequestID");
 
                     b.HasOne("BloodLink.Models.User", "User")
                         .WithMany("Donations")

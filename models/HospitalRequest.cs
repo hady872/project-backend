@@ -1,5 +1,7 @@
-// models/HospitalRequest.cs
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BloodLink.Models
 {
@@ -41,5 +43,8 @@ namespace BloodLink.Models
         public string Location { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // ✅ الإضافة المطلوبة: لربط المتبرعين بالطلب وعرضهم في صفحة المستشفى
+        public virtual ICollection<Donation> Donations { get; set; } = new List<Donation>();
     }
 }

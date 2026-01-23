@@ -26,18 +26,18 @@ namespace BloodLink.Data
             modelBuilder.Entity<OTP>().ToTable("otps");
             modelBuilder.Entity<HospitalRequest>().ToTable("hospitalrequests");
 
-            // ✅ جعل العلاقة مع طلب المستشفى اختيارية
+            // ✅ التعديل الجوهري: ربط الطرفين ببعض (Donation <-> HospitalRequest)
             modelBuilder.Entity<Donation>()
                 .HasOne(d => d.HospitalRequest)
-                .WithMany()
+                .WithMany(r => r.Donations) // هنا ربطنا التبرعات بالطلبات بشكل صريح
                 .HasForeignKey(d => d.HospitalRequestID)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // ✅ الحل الجديد: جعل العلاقة مع بنك الدم اختيارية تماماً لمنع خطأ الـ NULL
+            // ✅ جعل العلاقة مع بنك الدم اختيارية تماماً
             modelBuilder.Entity<Donation>()
                 .HasOne(d => d.BloodBank)
                 .WithMany()
-                .HasForeignKey("BloodBankBankID") // نفس الاسم اللي ظهر في رسالة الخطأ عندك
+                .HasForeignKey("BloodBankBankID") 
                 .IsRequired(false); 
         }
     }

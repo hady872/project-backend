@@ -43,10 +43,7 @@ namespace BloodLink.Controllers
 
             try 
             {
-                donation.User = null;
-                donation.HospitalRequest = null;
-                donation.BloodBank = null;
-
+                // تم إزالة الأسطر التي كانت تسبب تصفير العلاقات لضمان ربط الـ HospitalRequestID
                 if (string.IsNullOrEmpty(donation.Status))
                     donation.Status = "Pending";
 

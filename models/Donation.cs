@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization; // تم إضافة هذا السطر
 
 namespace BloodLink.Models
 {
@@ -21,9 +22,15 @@ namespace BloodLink.Models
         public string? CenterName { get; set; }
 
         public int? HospitalRequestID { get; set; }
+
+        // تم إضافة JsonIgnore لمنع تكرار البيانات في الـ JSON (حل مشكلة الـ Cycle)
+        [JsonIgnore]
         public HospitalRequest? HospitalRequest { get; set; }
 
+        [JsonIgnore]
         public User? User { get; set; }
+
+        [JsonIgnore]
         public BloodBank? BloodBank { get; set; }
     }
 }
